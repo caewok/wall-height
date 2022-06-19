@@ -21,7 +21,7 @@ class WallHeightUtils{
   }
 
   get tokenElevation(){
-    return this._token?.data?.elevation ?? this.currentTokenElevation
+    return this._token?.document?.elevation ?? this.currentTokenElevation
   }
 
   set currentTokenElevation(elevation) {
@@ -74,7 +74,7 @@ class WallHeightUtils{
 
   getSourceElevationTop(document) {
     if (document instanceof TokenDocument) return document.object.losHeight
-    return document.data.flags?.levels?.rangeTop ?? +Infinity;
+    return document.flags?.levels?.rangeTop ?? +Infinity;
   }
 
   async setSourceElevationBottom(document, value) {
@@ -83,8 +83,8 @@ class WallHeightUtils{
   }
 
   getSourceElevationBottom(document) {
-    if (document instanceof TokenDocument) return document.data.elevation;
-    return document.data.flags?.levels?.rangeBottom ?? -Infinity;
+    if (document instanceof TokenDocument) return document.elevation;
+    return document.flags?.levels?.rangeBottom ?? -Infinity;
   }
 
   async setSourceElevationBounds(document, bottom, top) {
@@ -94,7 +94,7 @@ class WallHeightUtils{
 
   getSourceElevationBounds(document) {
     if (document instanceof TokenDocument) {
-      const bottom = document.data.elevation;
+      const bottom = document.elevation;
       const top = document.object
         ? document.object.losHeight
         : bottom;
@@ -110,7 +110,7 @@ class WallHeightUtils{
 
   getSourceElevationBounds(document) {
     if (document instanceof TokenDocument) {
-      const bottom = document.data.elevation;
+      const bottom = document.elevation;
       const top = document.object
       ? document.object.losHeight
       : bottom;
@@ -124,7 +124,7 @@ class WallHeightUtils{
     const walls = Array.from(scene.walls);
     const updates = [];
     for(let wall of walls){
-      const oldTop = wall.data.flags?.["wall-height"]?.top;
+      const oldTop = wall.document.flags?.["wall-height"]?.top;
       if(oldTop != null && oldTop != undefined){
         const newTop = oldTop - 1;
         updates.push({_id: wall.id, "flags.wall-height.top": newTop});
@@ -206,8 +206,8 @@ class WallHeightUtils{
 
   addBoundsToRays(rays, token) {
     if (token) {
-      const bottom = token.data.elevation;
-      const top = WallHeight._blockSightMovement ? token.losHeight : token.data.elevation;
+      const bottom = token.document.elevation;
+      const top = WallHeight._blockSightMovement ? token.losHeight : token.document.elevation;
       for (const ray of rays) {
         ray.A.b = bottom;
         ray.A.t = top;
@@ -253,7 +253,7 @@ export function registerWrappers() {
   function tokenCheckCollision(destination) {
     // Create a Ray for the attempted move
     let origin = this.getCenter(...Object.values(this._validPosition));
-    let ray = new Ray({x: origin.x, y: origin.y, b: this.data.elevation, t: WallHeight._blockSightMovement ? this.losHeight : this.data.elevation }, {x: destination.x, y: destination.y});
+    let ray = new Ray({x: origin.x, y: origin.y, b: this.document.elevation, t: WallHeight._blockSightMovement ? this.losHeight : this.document.elevation }, {x: destination.x, y: destination.y});
 
     // Shift the origin point by the prior velocity
     ray.A.x -= this._velocity.sx;
@@ -282,12 +282,12 @@ export function registerWrappers() {
     const b = origin.b ?? -Infinity;
     const t = origin.t ?? +Infinity;
     return b >= bottom && t <= top;
-  } 
+  }
 
   function isDoorVisible(wrapped, ...args) {
     const wall = this.wall;
     const { advancedVision } = getSceneSettings(wall.scene);
-    const elevation = WallHeight.isLevels && _levels?.UI?.rangeEnabled && !canvas.tokens.controlled[0] ? WallHeight.currentTokenElevation : WallHeight._token?.data?.elevation;
+    const elevation = WallHeight.isLevels && _levels?.UI?.rangeEnabled && !canvas.tokens.controlled[0] ? WallHeight.currentTokenElevation : WallHeight._token?.document?.elevation;
     if (elevation == null || !advancedVision) return wrapped(...args);
     const { top, bottom } = getWallBounds(wall);
     if (elevation < bottom || elevation > top) return false;
@@ -303,7 +303,7 @@ export function registerWrappers() {
         if (config.type !== "move") {
           bottom = top = object.losHeight;
         } else {
-          bottom = object.data.elevation;
+          bottom = object.elevation;
           top = WallHeight._blockSightMovement ? object.losHeight : bottom;
         }
       } else if (object instanceof AmbientLight || object instanceof AmbientSound) {
